@@ -211,15 +211,22 @@ class IngestionService:
         logger.info(f"Creating vector database: {vector_store_name}")
         
         # Register vector database
+        resp_vector_db_id = ""
         try:
-            self.client.vector_dbs.register(
+            # NFO     2025-11-07 15:55:06,955 console_span_processor:62 telemetry:  20:55:06.895 [WARN] VectorDB is being deprecated in future releases in favor of
+            #          VectorStore. Please migrate your usage accordingly.
+            # INFO     2025-11-07 15:55:06,956 console_span_processor:62 telemetry:  20:55:06.921 [WARN] Ignoring vector_db_id legal-vector-db-v1-0 and using
+            #          vector_store_id vs_427f7057-0ca4-42c7-b765-de4690fd8b99 instead. Setting VectorDB legal-vector-db-v1-0 to VectorDB.vector_db_name
+            resp = self.client.vector_dbs.register(
                 vector_db_id=vector_store_name,
+                vector_db_name=vector_store_name,
                 embedding_model=self.vector_db_config['embedding_model'],
                 embedding_dimension=self.vector_db_config['embedding_dimension'],
                # provider_id=self.vector_db_config['provider_id'] or self.get_provider_id(),
                provider_id=self.get_provider_id(),
             )
-            logger.info(f"Vector DB '{vector_store_name}' registered successfully")
+            logger.info(f"Vector DB '{vector_store_name}' registered successfully with resp '{resp}'")
+            resp_vector_db_id = resp.identifier
         
         except Exception as e:
             error_msg = str(e)
@@ -232,12 +239,12 @@ class IngestionService:
         # Insert documents
         try:
             logger.info(f"Inserting {len(documents)} chunks into vector database...")
-            self.client.tool_runtime.rag_tool.insert(
+            resp = self.client.tool_runtime.rag_tool.insert(
                 documents=documents,
-                vector_db_id=vector_store_name,
+                vector_db_id=resp_vector_db_id,
                 chunk_size_in_tokens=self.vector_db_config['chunk_size_in_tokens'],
             )
-            logger.info(f"✓ Successfully inserted documents into '{vector_store_name}'")
+            logger.info(f"✓ Successfully inserted documents into '{vector_store_name}' with resp '{resp}'")
             return True
         
         except Exception as e:

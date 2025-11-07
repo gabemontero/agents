@@ -2,6 +2,7 @@ version: 2
 image_name: llama-stack-examples
 apis:
 - agents
+- files
 - inference
 - safety
 - tool_runtime
@@ -28,12 +29,22 @@ providers:
     config:
       api_key: ${env.OPENAI_API_KEY:=}
       base_url: ${env.OPENAI_BASE_URL:=https://api.openai.com/v1}
+  files:
+  - provider_id: meta-reference-files
+    provider_type: inline::localfs
+    config:
+      storage_dir: ${env.FILES_STORAGE_DIR:=~/.llama/distributions/llama-stack-examples}/files
+      metadata_store:
+        type: sqlite
+        db_path: ${env.FILES_METADATA_DB_DIR:=~/.llama/distributions/llama-stack-examples}/files_metadata.db
   safety:
   - provider_id: llama-guard
     provider_type: inline::llama-guard
     config:
       excluded_categories: []
   tool_runtime:
+    - provider_id: rag-runtime
+      provider_type: inline::rag-runtime
     - provider_id: model-context-protocol
       provider_type: remote::model-context-protocol
       config: {}
@@ -72,6 +83,8 @@ vector_dbs: []
 datasets: []
 scoring_fns: []
 benchmarks: []
-tool_groups: []
+tool_groups:
+- toolgroup_id: builtin::rag
+  provider_id: rag-runtime
 server:
   port: 8321

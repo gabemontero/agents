@@ -32,4 +32,5 @@ dependencies = [
     "pymilvus>=2.6.3",
     "milvus-lite>=2.5.1",
     "files>=1.1.1",
+    "chardet>=5.2.0",
 ]
