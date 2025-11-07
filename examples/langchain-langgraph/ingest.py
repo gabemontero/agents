@@ -7,13 +7,14 @@ Processes documents from various sources (GitHub, S3, URLs) and stores them in v
 import os
 import sys
 import time
+import uuid
 import yaml
 import tempfile
 import subprocess
 from typing import List, Dict, Any
 import logging
 
-from llama_stack_client import LlamaStackClient
+from llama_stack_client import LlamaStackClient, Agent, AgentEventLogger
 from llama_stack_client.types import Document as LlamaStackDocument
 
 # Import docling for document processing
@@ -36,6 +37,7 @@ class IngestionService:
     
     def __init__(self, config_path: str):
         """Initialize the ingestion service with configuration."""
+        self.vector_db_ids = None
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
@@ -227,6 +229,9 @@ class IngestionService:
             )
             logger.info(f"Vector DB '{vector_store_name}' registered successfully with resp '{resp}'")
             resp_vector_db_id = resp.identifier
+            if not isinstance(self.vector_db_ids, list):
+                self.vector_db_ids = []
+            self.vector_db_ids.append(resp_vector_db_id)
         
         except Exception as e:
             error_msg = str(e)
@@ -335,10 +340,10 @@ class IngestionService:
         
         if failed > 0:
             logger.warning(f"{failed} pipeline(s) failed. Check logs for details.")
-            sys.exit(1)
+            # sys.exit(1)
         else:
             logger.info("All pipelines completed successfully!")
-            sys.exit(0)
+            # sys.exit(0)
 
 
 if __name__ == '__main__':
@@ -350,4 +355,30 @@ if __name__ == '__main__':
     
     service = IngestionService(config_file)
     service.run()
+
+    model = os.getenv("INFERENCE_MODEL", "ollama/llama3.2:3b")
+    rag_agent = Agent(
+        service.client,
+        model=model,
+        instructions="You are a helpful assistant. Use the RAG tool to answer questions as needed.",
+        tools=[
+            {
+                "name": "builtin::rag/knowledge_search",
+                "args": {"vector_db_ids": [service.vector_db_ids]},
+            }
+        ],
+    )
+
+    session_id = rag_agent.create_session(session_name=f"s{uuid.uuid4().hex}")
+
+    turns = ["describe the workspaces at FantaCo", "tell me about the FantaCo Sales Code of Conduct"]
+
+    for t in turns:
+        print("user>", t)
+        stream = rag_agent.create_turn(
+            messages=[{"role": "user", "content": t}], session_id=session_id, stream=True
+        )
+        for event in AgentEventLogger().log(stream):
+            event.print()
+
 
