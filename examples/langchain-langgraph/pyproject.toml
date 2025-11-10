@@ -33,4 +33,5 @@ dependencies = [
     "milvus-lite>=2.5.1",
     "files>=1.1.1",
     "chardet>=5.2.0",
+    "pypdf>=6.2.0"
 ]
