@@ -357,16 +357,36 @@ if __name__ == '__main__':
     service.run()
 
     model = os.getenv("INFERENCE_MODEL", "ollama/llama3.2:3b")
+    updated_toolgroup_selection = []
+    vector_dbs = service.client.vector_dbs.list() or []
+    if not vector_dbs:
+        logger.error(f"No vector dbs found")
+    vector_db_ids = [vector_db.identifier for vector_db in vector_dbs ]
+    tool_dict = dict(
+        name="builtin::rag/knowledge_search",
+        args={
+            "vector_db_ids": list(vector_db_ids),
+            # Defaults
+            "query_config": {
+                "chunk_size_in_tokens": 512,
+                "chunk_overlap_in_tokens": 50,
+            },
+        },
+    )
+    updated_toolgroup_selection.append(tool_dict)
+
     rag_agent = Agent(
         service.client,
         model=model,
-        instructions="You are a helpful assistant. Use the RAG tool to answer questions as needed.",
-        tools=[
-            {
-                "name": "builtin::rag/knowledge_search",
-                "args": {"vector_db_ids": [service.vector_db_ids]},
-            }
-        ],
+        instructions="You are a helpful assistant. Use the RAG tool to answer questions as needed, where you always respond with a summary of the result.",
+        tools=updated_toolgroup_selection,
+
+        # tools=[
+        #     {
+        #         "name": "builtin::rag/knowledge_search",
+        #         "args": {"vector_db_ids": [service.vector_db_ids]},
+        #     }
+        # ],
     )
 
     session_id = rag_agent.create_session(session_name=f"s{uuid.uuid4().hex}")
