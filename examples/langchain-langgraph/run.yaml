@@ -7,7 +7,6 @@ apis:
 - safety
 - tool_runtime
 - vector_io
-- files
 
 providers:
   inference:
@@ -58,15 +57,7 @@ providers:
       persistence:
         namespace: milvus
         backend: kv_default
-  files:
-  - provider_id: localfs
-    provider_type: inline::localfs
-    config:
-      storage_dir: .llama/files
-      metadata_store:
-        table_name: files_metadata
-        namespace: files
-        backend: sql_default
+
 registered_resources:
   models: {}
   shields:
