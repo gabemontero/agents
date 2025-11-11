@@ -75,10 +75,10 @@ storage:
   backends:
     kv_default:
       type: kv_sqlite
-      db_path: .llama/kvstore.db
+      db_path: ${env.KV_SQL_STORE_DIR:=~/.llama}/kvstore.db
     sql_default:
       type: sql_sqlite
-      db_path: .llama/sql_store.db
+      db_path: ${env.SQLITE_STORE_DIR:=~/.llama}/sql_store.db
   stores:
     metadata:
       namespace: registry
