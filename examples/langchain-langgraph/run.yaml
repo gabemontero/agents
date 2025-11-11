@@ -59,7 +59,7 @@ providers:
         backend: kv_default
 
 registered_resources:
-  models: {}
+  models: []
   shields:
   - provider_id: llama-guard
     shield_id: ${env.SAFETY_MODEL:=ollama/llama-guard3:8b}
