@@ -29,10 +29,8 @@ from docling_core.types.doc.labels import DocItemLabel
 from pathlib import Path
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 logger = logging.getLogger(__name__)
 
 
@@ -329,6 +327,10 @@ if __name__ == '__main__':
     service.run()
 
     model = os.getenv("INFERENCE_MODEL", "ollama/llama3.2:3b")
+    from datetime import datetime
+    current = datetime.now()
+    formatted_datetime_string = current.strftime("%Y-%m-%d %H:%M:%S")
+    logger.info(f"GGM making response call {formatted_datetime_string}")
     rag_response = service.client.responses.create(
         model=model,
         input="using file_search and the documents imported into the vector store, describe the workspaces at FantaCo",
@@ -339,6 +341,9 @@ if __name__ == '__main__':
             }
         ]
     )
+    current = datetime.now()
+    formatted_datetime_string = current.strftime("%Y-%m-%d %H:%M:%S")
+    logger.info(f"GGM returned from response call {formatted_datetime_string}")
 
     for i, output_item in enumerate(rag_response.output):
         if len(rag_response.output) > 1:
